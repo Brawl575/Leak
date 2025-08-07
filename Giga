@@ -186,7 +186,7 @@ local function moveToDelivery()
     hrp.CFrame = hrp.CFrame + Vector3.new(0, 0, 0)
     task.wait(0.2)
 
-    local speed = 80
+    local speed = 95
     
     local reached = false
     local maxTime = 8
