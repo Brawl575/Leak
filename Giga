@@ -354,13 +354,34 @@ local function getTargetForFloor(level, fromThirdFloor)
         elseif level == 2 then
             if not fromThirdFloor then
                 local modelFolder = plot:FindFirstChild("Model")
+                local foundInitialTarget = false
                 if modelFolder then
                     for _, obj in ipairs(modelFolder:GetChildren()) do
                         if obj:IsA("BasePart") and isSizeClose(obj.Size, Vector3.new(5, 1, 1), 0.01) then
                             local dist = (obj.Position - hrp.Position).Magnitude
-                            if dist < closestDistance then
-                                closestDistance = dist
-                                closestTarget = obj
+                            if dist < 50 then -- Check if within 50 studs
+                                if dist < closestDistance then
+                                    closestDistance = dist
+                                    closestTarget = obj
+                                    foundInitialTarget = true
+                                end
+                            end
+                        end
+                    end
+                end
+                if not foundInitialTarget then
+                    local decorations = plot:FindFirstChild("Decorations")
+                    if decorations then
+                        for _, obj in ipairs(decorations:GetChildren()) do
+                            if obj:IsA("BasePart") and isSizeClose(obj.Size, Vector3.new(45, 45, 2), 0.01) then
+                                local posY = obj.Position.Y
+                                if posY >= 8 and posY <= 9.1 then
+                                    local dist = (obj.Position - hrp.Position).Magnitude
+                                    if dist < closestDistance then
+                                        closestDistance = dist
+                                        closestTarget = obj
+                                    end
+                                end
                             end
                         end
                     end
@@ -401,7 +422,13 @@ local function getTargetPosition(target)
     if target:IsA("Model") then
         return getLaserCenter(target)
     elseif target:IsA("BasePart") then
-        return target.Position
+        local pos = target.Position
+        -- Adjust position for level 2 large part (fromThirdFloor = true)
+        if isSizeClose(target.Size, Vector3.new(17, 10, 2), 0.01) then
+            local zOffset = hrp.Position.X > -410 and 6.5 or -6.5
+            pos = pos + Vector3.new(0, 0, zOffset)
+        end
+        return pos
     else
         return nil
     end
