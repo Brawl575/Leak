@@ -186,11 +186,7 @@ local function moveToDelivery()
     hrp.CFrame = hrp.CFrame + Vector3.new(0, 0, 0)
     task.wait(0.2)
 
-    local currentY = hrp.Position.Y
     local speed = 80
-    if currentY > 8 and currentY <= 24 then
-        speed = 60
-    end
     
     local reached = false
     local maxTime = 8
@@ -259,7 +255,7 @@ local function moveToDelivery()
     lv, attachment = setupFlight()
     for i = 1, 12 do
         if not isMoving then break end
-        speed *= 0.6
+        speed = speed * 0.6
         local dir = (targetHitbox.Position - hrp.Position)
         if dir.Magnitude > 0 then
             dir = dir.Unit
@@ -435,7 +431,7 @@ local function getTargetPosition(target)
 end
 
 local function moveUntil(conditionFunc, directionFunc, callback)
-    local speed = 70
+    local speed = 98
     local conn
     conn = RunService.Heartbeat:Connect(function()
         if not isMoving then
@@ -462,7 +458,7 @@ end
 
 local function moveUntilLinear(conditionFunc, directionFunc, callback)
     local lv, attachment = setupFlight()
-    local speed = 45
+    local speed = 98
     local conn
     conn = RunService.Heartbeat:Connect(function()
         if not isMoving then
