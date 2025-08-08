@@ -17,6 +17,7 @@ local promptTriggered = false
 local armCheckConnection = nil
 local promptConnection = nil
 local currentProcess = nil
+local alignOrientation = nil
 
 -- === GUI SETUP ===
 local screenGui = Instance.new("ScreenGui")
@@ -126,6 +127,41 @@ player.CharacterAdded:Connect(function(newCharacter)
     print("Character respawned, status reset to Idle")
 end)
 
+-- === FUNCTION TO SETUP HORIZONTAL POSITION AND ROTATION LOCK ===
+local function setupHorizontalPosition(level)
+    if level == 3 then
+        if alignOrientation then
+            alignOrientation:Destroy()
+            alignOrientation = nil
+        end
+        hrp.CFrame = CFrame.new(hrp.Position) -- Reset to normal orientation on third floor
+        updateStatus("Normal orientation on floor 3")
+        return
+    end
+
+    -- Set horizontal orientation (lying down, facing forward)
+    local currentPos = hrp.Position
+    local forwardVector = (hrp.CFrame.LookVector * Vector3.new(1, 0, 1)).Unit -- Keep forward direction in XZ plane
+    local upVector = Vector3.new(0, 0, 1) -- Lie flat, pointing upward
+    local rightVector = forwardVector:Cross(upVector)
+    local horizontalCFrame = CFrame.new(currentPos, currentPos + forwardVector) * CFrame.Angles(math.rad(90), 0, 0)
+    hrp.CFrame = horizontalCFrame
+
+    -- Setup AlignOrientation to lock rotation (except on third floor)
+    if alignOrientation then
+        alignOrientation:Destroy()
+    end
+    alignOrientation = Instance.new("AlignOrientation")
+    alignOrientation.Name = "RotationLock"
+    alignOrientation.MaxTorque = 100000 -- Strong torque to lock orientation
+    alignOrientation.Responsiveness = 50
+    alignOrientation.RigidityEnabled = false
+    alignOrientation.CFrame = CFrame.new(Vector3.new(0, 0, 0), forwardVector) -- Lock to forward direction
+    alignOrientation.Attachment0 = Instance.new("Attachment", hrp)
+    alignOrientation.Parent = hrp
+    updateStatus("Horizontal position and rotation locked")
+end
+
 -- === MOVEMENT SCRIPT ===
 local function FindDelivery()
     local plots = workspace:FindFirstChild("Plots")
@@ -182,6 +218,9 @@ local function moveToDelivery()
     end
 
     local lv, attachment = setupFlight()
+    local currentY = hrp.Position.Y
+    local level = currentY <= 8 and 1 or (currentY <= 24 and 2 or 3)
+    setupHorizontalPosition(level)
     updateStatus("Flying to delivery...")
     hrp.CFrame = hrp.CFrame + Vector3.new(0, 0, 0)
     task.wait(0.2)
@@ -198,7 +237,10 @@ local function moveToDelivery()
             lv.VectorVelocity = Vector3.zero
             lv:Destroy()
             connection:Disconnect()
-            reached = true
+            if alignOrientation then
+                alignOrientation:Destroy()
+                alignOrientation = nil
+            end
             return
         end
 
@@ -209,6 +251,10 @@ local function moveToDelivery()
             lv:Destroy()
             connection:Disconnect()
             reached = true
+            if alignOrientation then
+                alignOrientation:Destroy()
+                alignOrientation = nil
+            end
             return
         end
 
@@ -222,6 +268,10 @@ local function moveToDelivery()
             lv:Destroy()
             connection:Disconnect()
             reached = true
+            if alignOrientation then
+                alignOrientation:Destroy()
+                alignOrientation = nil
+            end
             local humanoid = character:FindFirstChild("Humanoid")
             if humanoid then
                 humanoid.PlatformStand = false
@@ -237,6 +287,10 @@ local function moveToDelivery()
             lv:Destroy()
             connection:Disconnect()
             reached = true
+            if alignOrientation then
+                alignOrientation:Destroy()
+                alignOrientation = nil
+            end
             return
         end
 
@@ -253,6 +307,7 @@ local function moveToDelivery()
 
     updateStatus("Starting smooth deceleration for delivery")
     lv, attachment = setupFlight()
+    setupHorizontalPosition(level)
     for i = 1, 12 do
         if not isMoving then break end
         speed = speed * 0.6
@@ -272,6 +327,7 @@ local function moveToDelivery()
 
     updateStatus("Starting smooth descent for delivery")
     lv, attachment = setupFlight()
+    setupHorizontalPosition(level)
     local targetY = targetHitbox.Position.Y - 6 + 2.5 -- Adjusted to 6 studs below, plus original 2.5 offset
     local reachedY = false
     connection = RunService.Heartbeat:Connect(function()
@@ -280,6 +336,10 @@ local function moveToDelivery()
             lv:Destroy()
             connection:Disconnect()
             reachedY = true
+            if alignOrientation then
+                alignOrientation:Destroy()
+                alignOrientation = nil
+            end
             return
         end
 
@@ -288,6 +348,10 @@ local function moveToDelivery()
             lv:Destroy()
             connection:Disconnect()
             reachedY = true
+            if alignOrientation then
+                alignOrientation:Destroy()
+                alignOrientation = nil
+            end
             local humanoid = character:FindFirstChild("Humanoid")
             if humanoid then
                 humanoid.PlatformStand = false
@@ -306,6 +370,10 @@ local function moveToDelivery()
     updateStatus("Cleaning up delivery objects")
     task.delay(0.5, function()
         if attachment then attachment:Destroy() end
+        if alignOrientation then
+            alignOrientation:Destroy()
+            alignOrientation = nil
+        end
         if isMoving then
             updateStatus("Idle")
             isMoving = false
@@ -432,17 +500,28 @@ end
 
 local function moveUntil(conditionFunc, directionFunc, callback)
     local speed = 80
+    local currentY = hrp.Position.Y
+    local level = currentY <= 8 and 1 or (currentY <= 24 and 2 or 3)
+    setupHorizontalPosition(level)
     local conn
     conn = RunService.Heartbeat:Connect(function()
         if not isMoving then
             hrp.Velocity = Vector3.zero
             conn:Disconnect()
+            if alignOrientation then
+                alignOrientation:Destroy()
+                alignOrientation = nil
+            end
             return
         end
 
         if conditionFunc() then
             hrp.Velocity = Vector3.zero
             conn:Disconnect()
+            if alignOrientation then
+                alignOrientation:Destroy()
+                alignOrientation = nil
+            end
             if callback then callback() end
         else
             local dir = directionFunc()
@@ -459,6 +538,9 @@ end
 local function moveUntilLinear(conditionFunc, directionFunc, callback)
     local lv, attachment = setupFlight()
     local speed = 98
+    local currentY = hrp.Position.Y
+    local level = currentY <= 8 and 1 or (currentY <= 24 and 2 or 3)
+    setupHorizontalPosition(level)
     local conn
     conn = RunService.Heartbeat:Connect(function()
         if not isMoving then
@@ -466,6 +548,10 @@ local function moveUntilLinear(conditionFunc, directionFunc, callback)
             lv:Destroy()
             attachment:Destroy()
             conn:Disconnect()
+            if alignOrientation then
+                alignOrientation:Destroy()
+                alignOrientation = nil
+            end
             return
         end
 
@@ -474,6 +560,10 @@ local function moveUntilLinear(conditionFunc, directionFunc, callback)
             lv:Destroy()
             attachment:Destroy()
             conn:Disconnect()
+            if alignOrientation then
+                alignOrientation:Destroy()
+                alignOrientation = nil
+            end
             if callback then callback() end
         else
             local dir = directionFunc()
@@ -494,11 +584,15 @@ local function moveToTarget(target, level, fromThirdFloor)
         updateStatus("Invalid target")
         isMoving = false
         textButton.Text = "Start Process"
+        if alignOrientation then
+            alignOrientation:Destroy()
+            alignOrientation = nil
+        end
         return
     end
 
     local tolerance = 0.5  -- Допуск для проверки позиции
-
+    setupHorizontalPosition(level)
     updateStatus("Moving to target at " .. tostring(pos))
     moveUntil(
         function()
@@ -540,6 +634,10 @@ local function moveToTarget(target, level, fromThirdFloor)
                     updateStatus("No main target found")
                     isMoving = false
                     textButton.Text = "Start Process"
+                    if alignOrientation then
+                        alignOrientation:Destroy()
+                        alignOrientation = nil
+                    end
                 end
             elseif level == 3 then
                 updateStatus("Waiting for fall from third floor")
@@ -557,6 +655,10 @@ local function moveToTarget(target, level, fromThirdFloor)
                             updateStatus("No target on floor 2")
                             isMoving = false
                             textButton.Text = "Start Process"
+                            if alignOrientation then
+                                alignOrientation:Destroy()
+                                alignOrientation = nil
+                            end
                         end
                     end
                 end)
@@ -704,6 +806,10 @@ local function startProcess()
         isMoving = false
         textButton.Text = "Start Process"
         updateStatus("Process canceled")
+        if alignOrientation then
+            alignOrientation:Destroy()
+            alignOrientation = nil
+        end
         return
     end
 
@@ -750,6 +856,10 @@ local function startProcess()
                 updateStatus("No target found")
                 isMoving = false
                 textButton.Text = "Start Process"
+                if alignOrientation then
+                    alignOrientation:Destroy()
+                    alignOrientation = nil
+                end
             end
         end
     end)
@@ -771,6 +881,11 @@ textButton.MouseButton1Click:Connect(function()
         if armCheckConnection then
             armCheckConnection:Disconnect()
             armCheckConnection = nil
+        end
+        
+        if alignOrientation then
+            alignOrientation:Destroy()
+            alignOrientation = nil
         end
     else
         startProcess()
