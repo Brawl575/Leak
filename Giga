@@ -246,7 +246,7 @@ local function moveToDelivery()
     end)
 
     while not reached do
-        task.wait(0.05)
+        task.wait(0.12)
     end
 
     if not isMoving then return end
@@ -431,7 +431,7 @@ local function getTargetPosition(target)
 end
 
 local function moveUntil(conditionFunc, directionFunc, callback)
-    local speed = 85
+    local speed = 80
     local conn
     conn = RunService.Heartbeat:Connect(function()
         if not isMoving then
