@@ -225,7 +225,7 @@ local function moveToDelivery()
     hrp.CFrame = hrp.CFrame + Vector3.new(0, 0, 0)
     task.wait(0.2)
 
-    local speed = 80
+    local speed = 90
     
     local reached = false
     local maxTime = 8
@@ -537,7 +537,7 @@ end
 
 local function moveUntilLinear(conditionFunc, directionFunc, callback)
     local lv, attachment = setupFlight()
-    local speed = 98
+    local speed = 90
     local currentY = hrp.Position.Y
     local level = currentY <= 8 and 1 or (currentY <= 24 and 2 or 3)
     setupHorizontalPosition(level)
