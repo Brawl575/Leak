@@ -297,7 +297,7 @@ local function moveToDelivery()
     local currentY = hrp.Position.Y
     updateStatus("Flying to delivery...")
 
-    local speed = 130 -- Изменена скорость на 130
+    local speed = 135 -- Изменена скорость на 130
     
     local reached = false
     local maxTime = 8
@@ -694,7 +694,7 @@ local function moveToTarget(target, level, fromThirdFloor)
                 moveUntilLinear(
                     function()
                         local distX = math.abs(hrp.Position.X + 410)
-                        if distX <= 80 then
+                        if distX <= 65 then
                             updateStatus("Within 80 studs of -410, proceeding to delivery")
                             return true
                         end
