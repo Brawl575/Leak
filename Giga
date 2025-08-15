@@ -619,8 +619,9 @@ local function moveToTarget(target, level, fromThirdFloor)
     local tolerance = 0.5
     updateStatus("Moving to target at " .. tostring(pos))
     
-    -- Use moveUntilLinear for level 2 to prevent falling (horizontal flight)
-    local moveFunc = (level == 2) and moveUntilLinear or moveUntil
+    -- Используем linear только для level 2 без fromThirdFloor
+    local useLinear = (level == 2 and not fromThirdFloor)
+    local moveFunc = useLinear and moveUntilLinear or moveUntil
     
     moveFunc(
         function()
